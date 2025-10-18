@@ -8,7 +8,7 @@ from auth import get_current_user
 from quota import check_quota, check_persona_access, calculate_cost, get_openai_model
 from db_models import create_conversation, add_message, log_usage, get_conversation_messages, update_conversation_title
 
-router = APIRouter(prefix="/api/chat", tags=["chat"])
+router = APIRouter(prefix="/chat", tags=["chat"])
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
 class Message(BaseModel):
