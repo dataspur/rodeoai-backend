@@ -1,8 +1,0 @@
-{
-  "buildCommand": "npm install",
-  "devCommand": "node index.js",
-  "outputDirectory": "./",
-  "env": {
-    "OPENAI_API_KEY": "@openai_api_key"
-  }
-}
