@@ -1,11 +1,9 @@
 """
 RodeoAI backend - Uses OpenAI API for intelligent rodeo expertise.
+Vercel serverless function format.
 """
 
-from http.server import BaseHTTPRequestHandler
 import json
-from urllib.parse import urlparse
-from datetime import datetime
 import os
 from openai import OpenAI
 
@@ -40,63 +38,44 @@ def get_rodeo_response(message, model):
     except Exception as e:
         return f"Error getting rodeo advice: {str(e)}"
 
-class handler(BaseHTTPRequestHandler):
-    def _set_headers(self, status=200, content_type='application/json'):
-        self.send_response(status)
-        self.send_header('Content-Type', content_type)
-        self.send_header('Access-Control-Allow-Origin', '*')
-        self.send_header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
-        self.send_header('Access-Control-Allow-Headers', 'Content-Type')
-        self.end_headers()
+def handler(request):
+    """Vercel serverless handler."""
+    # CORS headers
+    headers = {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type',
+        'Content-Type': 'application/json'
+    }
 
-    def do_OPTIONS(self):
-        self._set_headers(204)
+    # Handle OPTIONS
+    if request.method == 'OPTIONS':
+        return ('', 204, headers)
 
-    def do_GET(self):
-        path = urlparse(self.path).path
+    # Handle GET /health
+    if request.method == 'GET' and request.path == '/health':
+        return (json.dumps({"status": "RodeoAI backend live"}), 200, headers)
 
-        if path == '/' or path == '/health':
-            self._set_headers()
-            response = {
-                "status": "RodeoAI backend live",
-                "version": "1.0.0",
-                "timestamp": datetime.now().isoformat()
-            }
-            self.wfile.write(json.dumps(response).encode())
-        else:
-            self._set_headers(404)
-            self.wfile.write(json.dumps({"error": "Not found"}).encode())
-
-    def do_POST(self):
-        path = urlparse(self.path).path
-        content_length = int(self.headers.get('Content-Length', 0))
-        body = self.rfile.read(content_length).decode('utf-8')
-
+    # Handle POST /chat
+    if request.method == 'POST' and request.path in ['/chat', '/chat/']:
         try:
-            data = json.loads(body) if body else {}
-        except json.JSONDecodeError:
-            self._set_headers(400)
-            self.wfile.write(json.dumps({"error": "Invalid JSON"}).encode())
-            return
-
-        if path == '/chat/' or path == '/chat':
+            data = json.loads(request.body) if request.body else {}
             message = data.get('message', '')
             model = data.get('model', 'scamper')
 
             if not message:
-                self._set_headers(400)
-                self.wfile.write(json.dumps({"error": "Message is required"}).encode())
-                return
+                return (json.dumps({"error": "Message is required"}), 400, headers)
 
             reply = get_rodeo_response(message, model)
-            self._set_headers()
             response = {"reply": reply, "model": model}
-            self.wfile.write(json.dumps(response).encode())
+            return (json.dumps(response), 200, headers)
 
-        elif path == '/analytics/log':
-            self._set_headers()
-            self.wfile.write(json.dumps({"status": "ok", "logged": True}).encode())
+        except Exception as e:
+            return (json.dumps({"error": str(e)}), 500, headers)
 
-        else:
-            self._set_headers(404)
-            self.wfile.write(json.dumps({"error": "Endpoint not found"}).encode())
+    # Handle POST /analytics/log
+    if request.method == 'POST' and request.path == '/analytics/log':
+        return (json.dumps({"status": "ok", "logged": True}), 200, headers)
+
+    # 404
+    return (json.dumps({"error": "Endpoint not found"}), 404, headers)
