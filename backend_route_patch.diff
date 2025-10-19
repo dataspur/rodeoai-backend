@@ -1,0 +1,12 @@
+*** Begin Patch
+*** Update File: auth.py
+@@
+-router = APIRouter(prefix="/api/auth")
++router = APIRouter(prefix="/auth")
+*** End Patch
+*** Update File: chat.py
+@@
+-router = APIRouter(prefix="/api/chat")
++router = APIRouter(prefix="/chat")
+*** End Patch
+*** End Patch
