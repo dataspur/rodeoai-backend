@@ -7,16 +7,13 @@ import os
 import json
 from openai import OpenAI
 
-# Environment variables
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
 PORT = int(os.environ.get("PORT", 3001))
 
-# Initialize OpenAI
 client = OpenAI(api_key=OPENAI_API_KEY)
 
 app = FastAPI(title="RodeoAI API")
 
-# CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -25,15 +22,13 @@ app.add_middleware(
     allow_headers=["*"]
 )
 
-# Models
 RODEO_MODELS = {
     "scamper": {
         "name": "Scamper",
         "model": "gpt-4o-mini",
         "description": "Lightning-fast answers",
         "emoji": "⚡",
-        "system_prompt": "You are Scamper, RodeoAI's lightning-fast 
-assistant. Provide quick, concise rodeo information.",
+        "system_prompt": "You are Scamper, a lightning-fast rodeo assistant. Provide quick, concise answers.",
         "temperature": 0.7,
         "max_tokens": 500
     },
@@ -42,8 +37,7 @@ assistant. Provide quick, concise rodeo information.",
         "model": "gpt-4o",
         "description": "Your champion companion",
         "emoji": "🏆",
-        "system_prompt": "You are Gold Buckle, RodeoAI's balanced expert. 
-Provide comprehensive rodeo expertise.",
+        "system_prompt": "You are Gold Buckle, a balanced rodeo expert. Provide comprehensive answers.",
         "temperature": 0.8,
         "max_tokens": 1500
     },
@@ -52,8 +46,7 @@ Provide comprehensive rodeo expertise.",
         "model": "gpt-4o",
         "description": "Unstoppable intelligence",
         "emoji": "🐂",
-        "system_prompt": "You are Bodacious, RodeoAI's most powerful 
-assistant. Provide deep analysis and complex planning.",
+        "system_prompt": "You are Bodacious, the most powerful rodeo assistant. Provide deep analysis.",
         "temperature": 0.9,
         "max_tokens": 2500
     }
@@ -91,8 +84,7 @@ async def get_models():
         ]
     }
 
-async def generate_stream(messages: List[ChatMessage], model_config: dict) -> 
-AsyncGenerator[str, None]:
+async def generate_stream(messages: List[ChatMessage], model_config: dict) -> AsyncGenerator[str, None]:
     try:
         full_messages = [
             {"role": "system", "content": model_config["system_prompt"]}
@@ -108,8 +100,7 @@ AsyncGenerator[str, None]:
         
         for chunk in stream:
             if chunk.choices[0].delta.content is not None:
-                yield f"data: {json.dumps({'content': 
-chunk.choices[0].delta.content})}\n\n"
+                yield f"data: {json.dumps({'content': chunk.choices[0].delta.content})}\n\n"
         
         yield f"data: {json.dumps({'done': True})}\n\n"
         
@@ -119,7 +110,7 @@ chunk.choices[0].delta.content})}\n\n"
 @app.post("/api/chat")
 async def chat(request: ChatRequest):
     if request.model not in RODEO_MODELS:
-        raise HTTPException(status_code=400, detail=f"Invalid model")
+        raise HTTPException(status_code=400, detail="Invalid model")
     
     model_config = RODEO_MODELS[request.model]
     
@@ -136,8 +127,7 @@ async def chat(request: ChatRequest):
         try:
             full_messages = [
                 {"role": "system", "content": model_config["system_prompt"]}
-            ] + [{"role": msg.role, "content": msg.content} for msg in 
-request.messages]
+            ] + [{"role": msg.role, "content": msg.content} for msg in request.messages]
             
             response = client.chat.completions.create(
                 model=model_config["model"],
